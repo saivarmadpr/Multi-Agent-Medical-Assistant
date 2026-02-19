@@ -9,16 +9,14 @@ RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     ffmpeg \
     build-essential \
-    # OpenCV dependencies
-    libgl1-mesa-glx \
+    curl \
+    libgl1 \
     libglib2.0-0 \
     libsm6 \
     libxrender1 \
     libxext6 \
-    # Image processing dependencies
     libpng-dev \
     libjpeg-dev \
-    # For lxml
     libxml2-dev \
     libxslt1-dev \
     && apt-get clean \
