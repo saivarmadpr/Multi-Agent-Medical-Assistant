@@ -78,9 +78,28 @@ class QueryRequest(BaseModel):
     query: str
     conversation_history: List = []
 
+class MessageRequest(BaseModel):
+    message: str
+
 class SpeechRequest(BaseModel):
     text: str
     voice_id: str = "EXAMPLE_VOICE_ID"  # Default voice ID
+
+@app.post("/api/chat")
+def api_chat(request: MessageRequest):
+    """Simplified chat endpoint for external API access (e.g. red-teaming tools).
+    Accepts {"message": "..."} and returns {"response": "..."}."""
+    import logging
+    logger = logging.getLogger("medical-assistant")
+    logger.info("=== ATTACK PROMPT ===\n%s", request.message)
+    try:
+        response_data = process_query(request.message)
+        response_text = response_data['messages'][-1].content
+        logger.info("=== RESPONSE [%s] ===\n%s", response_data["agent_name"], response_text[:500])
+        return {"response": response_text, "agent": response_data["agent_name"]}
+    except Exception as e:
+        logger.error("=== ERROR ===\n%s", str(e))
+        return JSONResponse(status_code=500, content={"response": f"Error: {str(e)}"})
 
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
