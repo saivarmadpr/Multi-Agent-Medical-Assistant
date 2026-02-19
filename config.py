@@ -3,125 +3,92 @@ Configuration file for the Multi-Agent Medical Chatbot
 
 This file contains all the configuration parameters for the project.
 
-If you want to change the LLM and Embedding model:
-
-you can do it by changing all 'llm' and 'embedding_model' variables present in multiple classes below.
-
-Each llm definition has unique temperature value relevant to the specific class. 
+Supports both Azure OpenAI and OpenAI-compatible backends (e.g. OpenRouter)
+via environment variables: OPENAI_API_KEY, OPENAI_API_BASE, OPENAI_MODEL.
 """
 
+import logging
 import os
 from dotenv import load_dotenv
-from langchain_openai import AzureOpenAIEmbeddings, AzureChatOpenAI
+from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 
-# Load environment variables from .env file
 load_dotenv()
+
+logger = logging.getLogger(__name__)
+
+
+def _get_llm(temperature: float = 0.5) -> ChatOpenAI:
+    """Create a ChatOpenAI instance from env-based configuration."""
+    kwargs: dict = {"temperature": temperature}
+
+    base_url = os.getenv("OPENAI_API_BASE")
+    if base_url:
+        kwargs["base_url"] = base_url
+
+    model = os.getenv("OPENAI_MODEL")
+    if model:
+        kwargs["model"] = model
+
+    return ChatOpenAI(**kwargs)
+
 
 class AgentDecisoinConfig:
     def __init__(self):
-        self.llm = AzureChatOpenAI(
-            deployment_name = os.getenv("deployment_name"),  # Replace with your Azure deployment name
-            model_name = os.getenv("model_name"),  # Replace with your Azure model name
-            azure_endpoint = os.getenv("azure_endpoint"),  # Replace with your Azure endpoint
-            openai_api_key = os.getenv("openai_api_key"),  # Replace with your Azure OpenAI API key
-            openai_api_version = os.getenv("openai_api_version"),  # Ensure this matches your API version
-            temperature = 0.1  # Deterministic
-        )
+        self.llm = _get_llm(temperature=0.1)
 
 class ConversationConfig:
     def __init__(self):
-        self.llm = AzureChatOpenAI(
-            deployment_name = os.getenv("deployment_name"),  # Replace with your Azure deployment name
-            model_name = os.getenv("model_name"),  # Replace with your Azure model name
-            azure_endpoint = os.getenv("azure_endpoint"),  # Replace with your Azure endpoint
-            openai_api_key = os.getenv("openai_api_key"),  # Replace with your Azure OpenAI API key
-            openai_api_version = os.getenv("openai_api_version"),  # Ensure this matches your API version
-            temperature = 0.7  # Creative but factual
-        )
+        self.llm = _get_llm(temperature=0.7)
 
 class WebSearchConfig:
     def __init__(self):
-        self.llm = AzureChatOpenAI(
-            deployment_name = os.getenv("deployment_name"),  # Replace with your Azure deployment name
-            model_name = os.getenv("model_name"),  # Replace with your Azure model name
-            azure_endpoint = os.getenv("azure_endpoint"),  # Replace with your Azure endpoint
-            openai_api_key = os.getenv("openai_api_key"),  # Replace with your Azure OpenAI API key
-            openai_api_version = os.getenv("openai_api_version"),  # Ensure this matches your API version
-            temperature = 0.3  # Slightly creative but factual
-        )
-        self.context_limit = 20     # include last 20 messsages (10 Q&A pairs) in history
+        self.llm = _get_llm(temperature=0.3)
+        self.context_limit = 20
 
 class RAGConfig:
     def __init__(self):
         self.vector_db_type = "qdrant"
-        self.embedding_dim = 1536  # Add the embedding dimension here
-        self.distance_metric = "Cosine"  # Add this with a default value
-        self.use_local = True  # Add this with a default value
-        self.vector_local_path = "./data/qdrant_db"  # Add this with a default value
+        self.embedding_dim = 1536
+        self.distance_metric = "Cosine"
+        self.use_local = True
+        self.vector_local_path = "./data/qdrant_db"
         self.doc_local_path = "./data/docs_db"
         self.parsed_content_dir = "./data/parsed_docs"
         self.url = os.getenv("QDRANT_URL")
         self.api_key = os.getenv("QDRANT_API_KEY")
-        self.collection_name = "medical_assistance_rag"  # Ensure a valid name
-        self.chunk_size = 512  # Modify based on documents and performance
-        self.chunk_overlap = 50  # Modify based on documents and performance
-        # self.embedding_model = "text-embedding-3-large"
-        # Initialize Azure OpenAI Embeddings
-        self.embedding_model = AzureOpenAIEmbeddings(
-            deployment = os.getenv("embedding_deployment_name"),  # Replace with your Azure deployment name
-            model = os.getenv("embedding_model_name"),  # Replace with your Azure model name
-            azure_endpoint = os.getenv("embedding_azure_endpoint"),  # Replace with your Azure endpoint
-            openai_api_key = os.getenv("embedding_openai_api_key"),  # Replace with your Azure OpenAI API key
-            openai_api_version = os.getenv("embedding_openai_api_version")  # Ensure this matches your API version
-        )
-        self.llm = AzureChatOpenAI(
-            deployment_name = os.getenv("deployment_name"),  # Replace with your Azure deployment name
-            model_name = os.getenv("model_name"),  # Replace with your Azure model name
-            azure_endpoint = os.getenv("azure_endpoint"),  # Replace with your Azure endpoint
-            openai_api_key = os.getenv("openai_api_key"),  # Replace with your Azure OpenAI API key
-            openai_api_version = os.getenv("openai_api_version"),  # Ensure this matches your API version
-            temperature = 0.3  # Slightly creative but factual
-        )
-        self.summarizer_model = AzureChatOpenAI(
-            deployment_name = os.getenv("deployment_name"),  # Replace with your Azure deployment name
-            model_name = os.getenv("model_name"),  # Replace with your Azure model name
-            azure_endpoint = os.getenv("azure_endpoint"),  # Replace with your Azure endpoint
-            openai_api_key = os.getenv("openai_api_key"),  # Replace with your Azure OpenAI API key
-            openai_api_version = os.getenv("openai_api_version"),  # Ensure this matches your API version
-            temperature = 0.5  # Slightly creative but factual
-        )
-        self.chunker_model = AzureChatOpenAI(
-            deployment_name = os.getenv("deployment_name"),  # Replace with your Azure deployment name
-            model_name = os.getenv("model_name"),  # Replace with your Azure model name
-            azure_endpoint = os.getenv("azure_endpoint"),  # Replace with your Azure endpoint
-            openai_api_key = os.getenv("openai_api_key"),  # Replace with your Azure OpenAI API key
-            openai_api_version = os.getenv("openai_api_version"),  # Ensure this matches your API version
-            temperature = 0.0  # factual
-        )
-        self.response_generator_model = AzureChatOpenAI(
-            deployment_name = os.getenv("deployment_name"),  # Replace with your Azure deployment name
-            model_name = os.getenv("model_name"),  # Replace with your Azure model name
-            azure_endpoint = os.getenv("azure_endpoint"),  # Replace with your Azure endpoint
-            openai_api_key = os.getenv("openai_api_key"),  # Replace with your Azure OpenAI API key
-            openai_api_version = os.getenv("openai_api_version"),  # Ensure this matches your API version
-            temperature = 0.3  # Slightly creative but factual
-        )
+        self.collection_name = "medical_assistance_rag"
+        self.chunk_size = 512
+        self.chunk_overlap = 50
+
+        try:
+            embed_kwargs: dict = {}
+            base_url = os.getenv("EMBEDDING_API_BASE") or os.getenv("OPENAI_API_BASE")
+            if base_url:
+                embed_kwargs["base_url"] = base_url
+            embed_model = os.getenv("EMBEDDING_MODEL")
+            if embed_model:
+                embed_kwargs["model"] = embed_model
+            self.embedding_model = OpenAIEmbeddings(**embed_kwargs)
+        except Exception as e:
+            logger.warning("Embedding model init failed (%s), RAG will be unavailable", e)
+            self.embedding_model = None
+
+        self.llm = _get_llm(temperature=0.3)
+        self.summarizer_model = _get_llm(temperature=0.5)
+        self.chunker_model = _get_llm(temperature=0.0)
+        self.response_generator_model = _get_llm(temperature=0.3)
         self.top_k = 5
-        self.vector_search_type = 'similarity'  # or 'mmr'
+        self.vector_search_type = 'similarity'
 
         self.huggingface_token = os.getenv("HUGGINGFACE_TOKEN")
 
         self.reranker_model = "cross-encoder/ms-marco-TinyBERT-L-6"
         self.reranker_top_k = 3
 
-        self.max_context_length = 8192  # (Change based on your need) # 1024 proved to be too low (retrieved content length > context length = no context added) in formatting context in response_generator code
-
-        self.include_sources = True  # Show links to reference documents and images along with corresponding query response
-
-        # ADJUST ACCORDING TO ASSISTANT'S BEHAVIOUR BASED ON THE DATA INGESTED:
-        self.min_retrieval_confidence = 0.40  # The auto routing from RAG agent to WEB_SEARCH agent is dependent on this value
-
-        self.context_limit = 20     # include last 20 messsages (10 Q&A pairs) in history
+        self.max_context_length = 8192
+        self.include_sources = True
+        self.min_retrieval_confidence = 0.40
+        self.context_limit = 20
 
 class MedicalCVConfig:
     def __init__(self):
@@ -129,19 +96,12 @@ class MedicalCVConfig:
         self.chest_xray_model_path = "./agents/image_analysis_agent/chest_xray_agent/models/covid_chest_xray_model.pth"
         self.skin_lesion_model_path = "./agents/image_analysis_agent/skin_lesion_agent/models/checkpointN25_.pth.tar"
         self.skin_lesion_segmentation_output_path = "./uploads/skin_lesion_output/segmentation_plot.png"
-        self.llm = AzureChatOpenAI(
-            deployment_name = os.getenv("deployment_name"),  # Replace with your Azure deployment name
-            model_name = os.getenv("model_name"),  # Replace with your Azure model name
-            azure_endpoint = os.getenv("azure_endpoint"),  # Replace with your Azure endpoint
-            openai_api_key = os.getenv("openai_api_key"),  # Replace with your Azure OpenAI API key
-            openai_api_version = os.getenv("openai_api_version"),  # Ensure this matches your API version
-            temperature = 0.1  # Keep deterministic for classification tasks
-        )
+        self.llm = _get_llm(temperature=0.1)
 
 class SpeechConfig:
     def __init__(self):
-        self.eleven_labs_api_key = os.getenv("ELEVEN_LABS_API_KEY")  # Replace with your actual key
-        self.eleven_labs_voice_id = "21m00Tcm4TlvDq8ikWAM"    # Default voice ID (Rachel)
+        self.eleven_labs_api_key = os.getenv("ELEVEN_LABS_API_KEY")
+        self.eleven_labs_voice_id = "21m00Tcm4TlvDq8ikWAM"
 
 class ValidationConfig:
     def __init__(self):
@@ -159,15 +119,14 @@ class ValidationConfig:
 class APIConfig:
     def __init__(self):
         self.host = "0.0.0.0"
-        self.port = 8000
+        self.port = int(os.getenv("PORT", 8000))
         self.debug = True
         self.rate_limit = 10
-        self.max_image_upload_size = 5  # max upload size in MB
+        self.max_image_upload_size = 5
 
 class UIConfig:
     def __init__(self):
         self.theme = "light"
-        # self.max_chat_history = 50
         self.enable_speech = True
         self.enable_image_upload = True
 
@@ -184,7 +143,4 @@ class Config:
         self.ui = UIConfig()
         self.eleven_labs_api_key = os.getenv("ELEVEN_LABS_API_KEY")
         self.tavily_api_key = os.getenv("TAVILY_API_KEY")
-        self.max_conversation_history = 20  # Include last 20 messsages (10 Q&A pairs) in history
-
-# # Example usage
-# config = Config()
+        self.max_conversation_history = 20

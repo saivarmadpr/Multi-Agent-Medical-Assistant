@@ -35,7 +35,7 @@ SKIN_LESION_OUTPUT = "uploads/skin_lesion_output"
 SPEECH_DIR = "uploads/speech"
 
 # Create directories if they don't exist
-for directory in [UPLOAD_FOLDER, FRONTEND_UPLOAD_FOLDER, SKIN_LESION_OUTPUT, SPEECH_DIR]:
+for directory in [UPLOAD_FOLDER, FRONTEND_UPLOAD_FOLDER, SKIN_LESION_OUTPUT, SPEECH_DIR, "data"]:
     os.makedirs(directory, exist_ok=True)
 
 # Mount static files directory
@@ -45,10 +45,11 @@ app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 # Set up templates
 templates = Jinja2Templates(directory="templates")
 
-# Initialize ElevenLabs client
-client = ElevenLabs(
-    api_key=config.speech.eleven_labs_api_key,
-)
+# Initialize ElevenLabs client (optional -- only needed for speech features)
+try:
+    client = ElevenLabs(api_key=config.speech.eleven_labs_api_key) if config.speech.eleven_labs_api_key else None
+except Exception:
+    client = None
 
 # Define allowed file extensions
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
