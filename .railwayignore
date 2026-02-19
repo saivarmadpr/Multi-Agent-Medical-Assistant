@@ -1,0 +1,10 @@
+.git
+data/parsed_docs
+data/raw
+data/raw_extras
+data/qdrant_db
+assets
+sample_images
+__pycache__
+*.pyc
+.env
